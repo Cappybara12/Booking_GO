@@ -3,8 +3,8 @@ package main
 import (
 	"net/http"
 
-	"github.com/akshay/bookings/pkg/config"
-	"github.com/akshay/bookings/pkg/handlers"
+	"github.com/akshay/bookings/internal/config"
+	"github.com/akshay/bookings/internal/handlers"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 )
@@ -21,7 +21,7 @@ func routes(app *config.AppConfig) http.Handler {
 	mux.Get("/search", handlers.Repo.Availability)
 	//we create the get request forst because we want that to test it via get first 
 	// we alos crteated the new route taht jsut go to handlers and difplsays our struct 
-	mux.Get("/search-json", handlers.Repo.AvailabilityJSON)
+	mux.Post("/search-json", handlers.Repo.AvailabilityJSON)
 
 	//to handle the psot repsone coming for the search route 
 	mux.Post("/search", handlers.Repo.PostAvailability)
