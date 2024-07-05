@@ -1,10 +1,14 @@
 package handlers
 
 import (
-	"github.com/akshay/bookings/pkg/models"
-	"github.com/akshay/bookings/pkg/config"
-	"github.com/akshay/bookings/pkg/render"
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
+
+	"github.com/akshay/bookings/pkg/config"
+	"github.com/akshay/bookings/pkg/models"
+	"github.com/akshay/bookings/pkg/render"
 )
 
 // Repo the repository used by the handlers
@@ -32,7 +36,7 @@ func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
 	remoteIP := r.RemoteAddr
 	m.App.Session.Put(r.Context(), "remote_ip", remoteIP)
 
-	render.RenderTemplate(w, "home.page.tmpl", &models.TemplateData{})
+	render.RenderTemplate(w, r, "home.page.tmpl", &models.TemplateData{})
 }
 
 // About is the handler for the about page
@@ -45,7 +49,55 @@ func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 	stringMap["remote_ip"] = remoteIP
 
 	// send data to the template
-	render.RenderTemplate(w, "about.page.tmpl", &models.TemplateData{
+	render.RenderTemplate(w, r, "about.page.tmpl", &models.TemplateData{
 		StringMap: stringMap,
 	})
+}
+
+// renders the male resertvation apge
+func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, r, "makeReservation.page.tmpl", &models.TemplateData{})
+}
+func (m *Repository) Contact(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, r, "contact.page.tmpl", &models.TemplateData{})
+}
+
+// renders the search apge
+func (m *Repository) Availability(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, r, "search.page.tmpl", &models.TemplateData{})
+}
+
+// now we will create the handler for the form post repsonse we got and then converted it to bytes
+func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
+	start := r.Form.Get("start")
+	end := r.Form.Get("end")
+
+	w.Write([]byte(fmt.Sprintf("started date is %s end date is %s ", start, end)))
+}
+//we creted our struct whcih displays our reposne to the browser
+type jsonResponse struct {
+	OK      bool   `json:"ok"`
+	Message string `json:"message"`
+}
+
+// handles the request for availabiltiy and send JSON response
+func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
+	resp := jsonResponse{
+		OK:      true,
+		Message: "Available",
+	}
+	out, err := json.MarshalIndent(resp, "", "	")
+	if err != nil {
+		log.Println(err)
+	}
+	//telling the header for thebrowser for the kind of input we are working with 
+	w.Header().Set("Content-type","application/json")
+	w.Write(out)
+}
+
+func (m *Repository) Generals(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, r, "generals.page.tmpl", &models.TemplateData{})
+}
+func (m *Repository) Majors(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, r, "major.page.tmpl", &models.TemplateData{})
 }

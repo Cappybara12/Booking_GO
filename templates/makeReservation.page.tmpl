@@ -1,0 +1,67 @@
+{{template "base" .}}
+
+{{define "content"}}
+<div class="container mt-5">
+    <h2 class="text-center">Make a Reservation</h2>
+    <form    class="row g-3 needs-validation" novalidate>
+        <div class="col-md-4">
+            <label for="name" class="form-label">Name</label>
+            <input type="text" class="form-control" id="name" required>
+            <div class="valid-feedback">Looks good!</div>
+            <div class="invalid-feedback">Please provide a name.</div>
+        </div>
+        <div class="col-md-4">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" required>
+            <div class="valid-feedback">Looks good!</div>
+            <div class="invalid-feedback">Please provide a valid email.</div>
+        </div>
+        <div class="col-md-4">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" id="phone" required>
+            <div class="valid-feedback">Looks good!</div>
+            <div class="invalid-feedback">Please provide a valid phone number.</div>
+        </div>
+        <div class="col-md-6">
+            <label for="city" class="form-label">City</label>
+            <input type="text" class="form-control" id="city" required>
+            <div class="valid-feedback">Looks good!</div>
+            <div class="invalid-feedback">Please provide a valid city.</div>
+        </div>
+        <div class="col-md-3">
+            <label for="state" class="form-label">State</label>
+            <select class="form-select" id="state" required>
+                <option selected disabled value="">Choose...</option>
+                <option>...</option>
+            </select>
+            <div class="valid-feedback">Looks good!</div>
+            <div class="invalid-feedback">Please select a valid state.</div>
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">Make Reservation</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Example starter JavaScript for disabling form submissions if there are invalid fields
+(() => {
+  'use strict';
+
+  // Fetch all the forms we want to apply custom Bootstrap validation styles to
+  const forms = document.querySelectorAll('.needs-validation');
+
+  // Loop over them and prevent submission
+  Array.from(forms).forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      form.classList.add('was-validated');
+    }, false);
+  });
+})();
+</script>
+{{end}}

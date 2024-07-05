@@ -1,0 +1,21 @@
+{{template "base" .}}
+
+{{define "content"}}
+<div class="container mt-5">
+    <h2 class="text-center">Seach for Availability</h2>
+    <form action="/search" method="post"  class="mt-3">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="mb-3">
+            <label for="checkin" class="form-label">Check-in Date</label>
+            <input required type="date" name="start" class="form-control" id="checkin" required>
+        </div>
+        <div class="mb-3">
+            <label for="checkout" class="form-label">Check-out Date</label>
+            <input required type="date" name="end" class="form-control" id="checkout" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Search Availability</button>
+    </form>
+    <button id="colorButton" class="btn btn-primary">Custom Availability Form</button>
+</div>
+
+{{end}}

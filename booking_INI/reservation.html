@@ -203,26 +203,6 @@
 
         const attention = Prompt();
 
-        document.getElementById("colorButton").addEventListener("click", function () {
-            let html = `
-                <form id="check-availability-form" action="" method="post" novalidate class="needs-validation">
-                    <div class="form-row">
-                        <div class="col">
-                            <div class="form-row" id="reservation-dates-modal">
-                                <div class="col">
-                                    <input required class="form-control" type="date" name="start" id="start" placeholder="Arrival">
-                                </div>
-                                <div class="col">
-                                    <input required class="form-control" type="date" name="end" id="end" placeholder="Departure">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            `;
-            attention.custom({ msg: html });
-        });
-
         function notify(msg, msgtype) {
             notie.alert({
                 type: msgtype,
