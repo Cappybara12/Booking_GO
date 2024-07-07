@@ -5,20 +5,51 @@ import (
 	"testing"
 
 	"github.com/akshay/bookings/internal/models"
-	"github.com/alexedwards/scs/v2"
 )
 
 func TestAddDefaultData(t *testing.T) {
 	var td models.TemplateData
+
+	r, err := getSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	session.Put(r.Context(), "flash", "123")
+
+	result := AddDefaultData(&td, r)
+	if result.Flash != "123" {
+		t.Error("flash value of 123 not found in session")
+	}
+
+}
+
+func TestRenderTemplate(t *testing.T) {
+	pathToTemplates = "./../../templates"
+	tc, err := CreateTemplateCache()
+	if err != nil {
+		t.Error(err)
+	}
+
+	app.TemplateCache = tc
+
 	r, err := getSession()
 	if err != nil {
 		t.Error(err)
 	}
-	session.Put(r.Context(), "flash", "123")
-	result := AddDefaultData(&td, r)
-	if result.Flash != "123" { // Changed condition to check for inequality
-		t.Error("flash value 123 not found in session")
+
+	var ww myWriter
+
+	err = RenderTemplate(&ww, r, "home.page.tmpl", &models.TemplateData{})
+	if err != nil {
+		t.Error("error writing template to browser", err)
 	}
+
+	err = RenderTemplate(&ww, r, "non-existent.page.tmpl", &models.TemplateData{})
+	if err == nil {
+		t.Error("rendered template that does not exist")
+	}
+
 }
 
 func getSession() (*http.Request, error) {
@@ -26,12 +57,25 @@ func getSession() (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	ctx := r.Context()
 	ctx, _ = session.Load(ctx, r.Header.Get("X-Session"))
 	r = r.WithContext(ctx)
 	return r, nil
 }
 
-func init() {
-	session = scs.New()
+// create the new tempalte dfucntion abscailly for every ficntoion we wil lcrate a speate testi fucntion
+func TestNewTemplates(t *testing.T) {
+	NewTemplates(app)
+}
+
+//same goes here
+
+func TestCreateTemplateCache(t *testing.T) {
+	pathToTemplates = "./../../templates"
+
+	_, err := CreateTemplateCache()
+	if err != nil {
+		t.Error(err)
+	}
 }
