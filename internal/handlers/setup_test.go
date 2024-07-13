@@ -12,6 +12,7 @@ import (
 	"html/template"
 
 	"github.com/akshay/bookings/internal/config"
+	"github.com/akshay/bookings/internal/driver"
 	"github.com/akshay/bookings/internal/models"
 	"github.com/akshay/bookings/internal/render"
 	"github.com/alexedwards/scs/v2"
@@ -20,17 +21,18 @@ import (
 	"github.com/justinas/nosurf"
 )
 
-var functions = template.FuncMap{}
-
 var app config.AppConfig
 var session *scs.SessionManager
 var pathToTemplates = "./../../templates"
+var functions = template.FuncMap{}
 
 func getRoutes() http.Handler {
-	//what am i going to put in the session
+	// what am I going to put in the session
 	gob.Register(models.Reservation{})
+
 	// change this to true when in production
 	app.InProduction = false
+
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	app.InfoLog = infoLog
 
@@ -52,43 +54,44 @@ func getRoutes() http.Handler {
 	}
 
 	app.TemplateCache = tc
-	//we chanegs it to treue else it will create the temaptles on every request even though they are created in the render.go
 	app.UseCache = true
 
-	repo := NewRepo(&app)
+	// Here you need to connect to the database
+	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=Akshay912")
+	if err != nil {
+		log.Fatal("Cannot connect to database! Dying...")
+	}
+
+	repo := NewRepo(&app, db)
 	NewHandlers(repo)
 
-	render.NewTemplates(&app)
+	render.NewRenderer(&app)
 
 	mux := chi.NewRouter()
 
 	mux.Use(middleware.Recoverer)
-	//comment the no surf out because we dont need to check it as already done in my middleware
-	// mux.Use(NoSurf)
+	mux.Use(NoSurf)
 	mux.Use(SessionLoad)
 
 	mux.Get("/", Repo.Home)
-	mux.Get("/generals", Repo.Generals)
-	mux.Get("/search", Repo.Availability)
-	//we create the get request forst because we want that to test it via get first
-	// we alos crteated the new route taht jsut go to handlers and difplsays our struct
-	mux.Post("/search-json", Repo.AvailabilityJSON)
+	mux.Get("/about", Repo.About)
+	mux.Get("/generals-quarters", Repo.Generals)
+	mux.Get("/majors-suite", Repo.Majors)
 
-	//to handle the psot repsone coming for the search route
-	mux.Post("/search", Repo.PostAvailability)
+	mux.Get("/search-availability", Repo.Availability)
+	mux.Post("/search-availability", Repo.PostAvailability)
+	mux.Post("/search-availability-json", Repo.AvailabilityJSON)
 
 	mux.Get("/contact", Repo.Contact)
 
-	mux.Get("/makeReservation", Repo.Reservation)
-	mux.Post("/makeReservation", Repo.PostReservation)
-	mux.Get("/reservationSummary", Repo.ReservationSummary)
+	mux.Get("/make-reservation", Repo.Reservation)
+	mux.Post("/make-reservation", Repo.PostReservation)
+	mux.Get("/reservation-summary", Repo.ReservationSummary)
 
-	mux.Get("/major", Repo.Majors)
-	mux.Get("/about", Repo.About)
 	fileServer := http.FileServer(http.Dir("./static/"))
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer))
-	return mux
 
+	return mux
 }
 
 // NoSurf is the csrf protection middleware
@@ -108,8 +111,9 @@ func NoSurf(next http.Handler) http.Handler {
 func SessionLoad(next http.Handler) http.Handler {
 	return session.LoadAndSave(next)
 }
-func CreateTestTemplateCache() (map[string]*template.Template, error) {
 
+// CreateTestTemplateCache creates a template cache as a map
+func CreateTestTemplateCache() (map[string]*template.Template, error) {
 	myCache := map[string]*template.Template{}
 
 	pages, err := filepath.Glob(fmt.Sprintf("%s/*.page.tmpl", pathToTemplates))
