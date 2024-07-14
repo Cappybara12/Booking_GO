@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/akshay/bookings/internal/config"
@@ -41,20 +40,11 @@ func NewHandlers(r *Repository) {
 
 // Home is the handler for the home page
 func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
-
 	render.Template(w, r, "home.page.tmpl", &models.TemplateData{})
 }
 
 // About is the handler for the about page
 func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
-	// perform some logic
-	// stringMap := make(map[string]string)
-	// stringMap["test"] = "Hello, again"
-
-	// remoteIP := m.App.Session.GetString(r.Context(), "remote_ip")
-	// stringMap["remote_ip"] = remoteIP
-
-	// send data to the template
 	render.Template(w, r, "about.page.tmpl", &models.TemplateData{})
 }
 
@@ -68,53 +58,30 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 		Form: forms.New(nil),
 		Data: data,
 	})
+	return
 }
 
 // PostReservation handles the posting of a reservation form
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
-    // Parse form data
-    err := r.ParseForm()
-    if err != nil {
-        helpers.ServerError(w, err)
-        return
-    }
+	err := r.ParseForm()
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
 
-    // Extract form values
-    st := r.Form.Get("start_date")
-    ed := r.Form.Get("end_date")
-    roomIDStr := r.Form.Get("room_id")
+	startDate := time.Now()               // You should get the actual start date from the form
+	endDate := startDate.AddDate(0, 0, 1) // Example end date one day after start date
+	roomID := 1                           // Example room ID, you should get the actual room ID from the form
 
-    // Validate and parse dates
-    layout := "2006-01-02"
-    startDate, err := time.Parse(layout, st)
-    if err != nil {
-        helpers.ServerError(w, err)
-        return
-    }
-    endDate, err := time.Parse(layout, ed)
-    if err != nil {
-        helpers.ServerError(w, err)
-        return
-    }
-
-    // Validate and convert room_id to integer
-    roomID, err := strconv.Atoi(roomIDStr)
-    if err != nil {
-        helpers.ServerError(w, err)
-        return
-    }
-
-    // Create Reservation object
-    reservation := models.Reservation{
-        FirstName: r.Form.Get("first_name"),
-        LastName:  r.Form.Get("last_name"),
-        Email:     r.Form.Get("email"),
-        Phone:     r.Form.Get("phone"),
-        StartDate: startDate,
-        EndDate:   endDate,
-        RoomID:    roomID,
-    }
-
+	reservation := models.Reservation{
+		FirstName: r.Form.Get("first_name"),
+		LastName:  r.Form.Get("last_name"),
+		Email:     r.Form.Get("email"),
+		Phone:     r.Form.Get("phone"),
+		StartDate: startDate,
+		EndDate:   endDate,
+		RoomID:    roomID,
+	}
 
 	form := forms.New(r.PostForm)
 
@@ -131,12 +98,28 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	err=m.DB.InsertReservation(reservation)
-	if err!=nil{
-		helpers.ServerError(w,err)
+	newReservationID, err := m.DB.InsertReservation(reservation)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
 	}
+
+	restriction := models.RoomRestriction{
+		StartDate:     startDate,
+		EndDate:       endDate,
+		RoomID:        roomID,
+		ReservationID: newReservationID,
+		RestrictionID: 1,
+	}
+
+	err = m.DB.InsertRoomRestriction(restriction)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
 	m.App.Session.Put(r.Context(), "reservation", reservation)
-	http.Redirect(w, r, "/reservation-summary", http.StatusSeeOther)
+	http.Redirect(w, r, "/reservationSummary", http.StatusSeeOther)
 }
 
 // Generals renders the room page

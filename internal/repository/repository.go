@@ -3,6 +3,7 @@ package repository
 import "github.com/akshay/bookings/internal/models"
 
 type DatabaseRepo interface {
-	AllUsers() bool
-	InsertReservation(res models.Reservation) error
+    AllUsers() bool
+    InsertReservation(res models.Reservation) (int, error)
+    InsertRoomRestriction(r models.RoomRestriction) error
 }

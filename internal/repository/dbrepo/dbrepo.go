@@ -7,16 +7,21 @@ import (
 	"github.com/akshay/bookings/internal/repository"
 )
 
-//well this would save our time if we are suign a separate db in future and we can easily change that then
-
+// postgresDBRepo holds the DB and AppConfig
 type postgresDBRepo struct {
 	App *config.AppConfig
 	DB  *sql.DB
 }
 
+// NewPostgresRepo creates a new repository
 func NewPostgresRepo(conn *sql.DB, a *config.AppConfig) repository.DatabaseRepo {
 	return &postgresDBRepo{
 		App: a,
 		DB:  conn,
 	}
+}
+
+// AllUsers returns true for now
+func (m *postgresDBRepo) AllUsers() bool {
+	return true
 }
