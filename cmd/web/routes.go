@@ -22,7 +22,7 @@ func routes(app *config.AppConfig) http.Handler {
 	//we create the get request forst because we want that to test it via get first
 	// we alos crteated the new route taht jsut go to handlers and difplsays our struct
 	mux.Post("/search-json", handlers.Repo.AvailabilityJSON)
-
+	mux.Get("/choose-room/{id}", handlers.Repo.ChooseRoom)
 	//to handle the psot repsone coming for the search route
 	mux.Post("/search", handlers.Repo.PostAvailability)
 
