@@ -11,30 +11,69 @@
     </div>
     {{end}}
     
-    {{define "js"}}
-    <script>
-            document.getElementById("check-availability").addEventListener("click", function () {
-                let html = `
-                    <form id="check-availability-form" action="" method="post" novalidate class="needs-validation">
-                        <div class="form-row">
+{{define "js"}}
+<script>
+    document.getElementById("check-availability").addEventListener("click", function () {
+        let html = `
+            <form id="check-availability-form" action="" method="post" novalidate class="needs-validation">
+                <div class="form-row">
+                    <div class="col">
+                        <div class="form-row" id="reservation-dates-modal">
                             <div class="col">
-                                <div class="form-row" id="reservation-dates-modal">
-                                    <div class="col">
-                                        <input required class="form-control" type="date" name="start" id="start" placeholder="Arrival">
-                                    </div>
-                                    <div class="col">
-                                        <input required class="form-control" type="date" name="end" id="end" placeholder="Departure">
-                                    </div>
-                                </div>
+                                <input required class="form-control" type="date" name="start" id="start" placeholder="Arrival">
+                            </div>
+                            <div class="col">
+                                <input required class="form-control" type="date" name="end" id="end" placeholder="Departure">
                             </div>
                         </div>
-                    </form>
-                `;
-                attention.custom({ msg: html ,title:"choose your dates"});
-            });
-    
-    
-    </script>
-    
-    {{end}}
-    
+                    </div>
+                </div>
+            </form>
+        `;
+        attention.custom({ 
+            msg: html,
+            title: "Choose your dates",
+            callback: function(result) {
+                let form = document.getElementById("check-availability-form");
+                let formData = new FormData(form);
+                formData.append("csrf_token", "{{.CSRFToken}}");
+                formData.append("room_id", "2");
+
+                fetch('/search-availability-json', {
+                    method: "post",
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        attention.custom({
+                            icon: 'success',
+                            showConfirmButton: false,
+                            msg: '<p>Room is available!</p>'
+                                + '<p><a href="/book-room?id='
+                                + data.room_id
+                                + '&s='
+                                + data.start_date                                
+                                + '&s='
+                                + data.end_date
+                                + '"class="btn btn-primary">'
+                                + 'Book Now!</a></p>'
+                        });
+                    } else {
+                        attention.error({
+                            msg: "No availability",
+                        });
+                    }
+                })
+                .catch(error => console.log('Error:', error));
+            }
+        });
+    });
+
+    // document.addEventListener("DOMContentLoaded", function() {
+    //     const today = new Date().toISOString().split('T')[0];
+    //     document.getElementById("start").setAttribute("min", today);
+    //     document.getElementById("end").setAttribute("min", today);
+    // });
+</script>
+{{end}}
