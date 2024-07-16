@@ -62,21 +62,29 @@ func (m *postgresDBRepo) InsertRoomRestriction(r models.RoomRestriction) error {
 func (m *postgresDBRepo) SearchAvailabilityByDatesByRoomID(start, end time.Time, roomID int) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	var numRows int
 
+	var numRows int
 	query := `
-		SELECT 
-			COUNT(id)
-		FROM 
-			room_restrictions
-		WHERE
-			room_id=$1
-			$2 < end_date AND $3 > start_date;`
+        SELECT
+            COUNT(id)
+        FROM
+            room_restrictions
+        WHERE
+            room_id = $1
+            AND $2 < end_date AND $3 > start_date;`
+
+	m.App.InfoLog.Printf("Executing query: %s with params: roomID=%d, start=%s, end=%s\n",
+		query, roomID, start.Format("2006-01-02"), end.Format("2006-01-02"))
+
 	row := m.DB.QueryRowContext(ctx, query, roomID, start, end)
 	err := row.Scan(&numRows)
 	if err != nil {
+		m.App.ErrorLog.Printf("Error scanning query result: %v\n", err)
 		return false, err
 	}
+
+	m.App.InfoLog.Printf("Query result: numRows = %d\n", numRows)
+
 	if numRows == 0 {
 		return true, nil
 	}

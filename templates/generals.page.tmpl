@@ -28,7 +28,7 @@
                 </div>
             </form>
         `;
-        attention.custom({ 
+        attention.custom({
             msg: html,
             title: "Choose your dates",
             callback: function(result) {
@@ -37,24 +37,23 @@
                 formData.append("csrf_token", "{{.CSRFToken}}");
                 formData.append("room_id", "1");
 
+                console.log("Form data:", Object.fromEntries(formData));
+
                 fetch('/search-availability-json', {
                     method: "post",
                     body: formData,
                 })
                 .then(response => response.json())
                 .then(data => {
+                    console.log("Received data:", JSON.stringify(data, null, 2));
                     if (data.ok) {
+                        let bookNowURL = `/book-room?id=${data.room_id}&s=${data.start_date}&e=${data.end_date}`;
+                        console.log("Book Now URL:", bookNowURL);
                         attention.custom({
                             icon: 'success',
                             showConfirmButton: false,
                             msg: '<p>Room is available!</p>'
-                                + '<p><a href="/book-room?id='
-                                + data.room_id
-                                + '&s='
-                                + data.start_date                                
-                                + '&s='
-                                + data.end_date
-                                + '"class="btn btn-primary">'
+                                + '<p><a href="' + bookNowURL + '" class="btn btn-primary">'
                                 + 'Book Now!</a></p>'
                         });
                     } else {
@@ -63,15 +62,14 @@
                         });
                     }
                 })
-                .catch(error => console.log('Error:', error));
+                .catch(error => {
+                    console.log('Error:', error);
+                    attention.error({
+                        msg: "An error occurred. Please try again.",
+                    });
+                });
             }
         });
     });
-
-    // document.addEventListener("DOMContentLoaded", function() {
-    //     const today = new Date().toISOString().split('T')[0];
-    //     document.getElementById("start").setAttribute("min", today);
-    //     document.getElementById("end").setAttribute("min", today);
-    // });
 </script>
 {{end}}

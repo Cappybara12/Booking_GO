@@ -34,6 +34,12 @@ func NewRepo(a *config.AppConfig, db *driver.DB) *Repository {
 		DB:  dbrepo.NewPostgresRepo(db.SQL, a),
 	}
 }
+func NewTestRepo(a *config.AppConfig, db *driver.DB) *Repository {
+	return &Repository{
+		App: a,
+		DB:  dbrepo.NewTestingRepo(a),
+	}
+}
 
 // NewHandlers sets the repository for the handlers
 func NewHandlers(r *Repository) {
@@ -194,22 +200,100 @@ func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 type jsonResponse struct {
 	OK        bool   `json:"ok"`
 	Message   string `json:"message"`
-	RoomID    string `json:"room_id`
-	StartDate string `json:"start_date`
+	RoomID    string `json:"room_id"`
+	StartDate string `json:"start_date"`
 	EndDate   string `json:"end_date"`
 }
 
 // AvailabilityJSON handles request for availability and sends JSON response
+// AvailabilityJSON handles request for availability and sends JSON response
 func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		m.App.ErrorLog.Println("Error parsing form:", err)
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Internal server error",
+		}
+		out, _ := json.MarshalIndent(resp, "", "     ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	// Log the entire form data for debugging
+	m.App.InfoLog.Printf("Received form data: %+v\n", r.Form)
 
 	sd := r.Form.Get("start")
 	ed := r.Form.Get("end")
 	layout := "2006-01-02"
-	startDate, _ := time.Parse(layout, sd)
-	endDate, _ := time.Parse(layout, ed)
-	roomID, _ := strconv.Atoi(r.Form.Get("room_id"))
+	startDate, err := time.Parse(layout, sd)
+	if err != nil {
+		m.App.ErrorLog.Printf("Error parsing start date '%s': %v\n", sd, err)
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Invalid start date format",
+		}
+		out, _ := json.MarshalIndent(resp, "", "     ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+	endDate, err := time.Parse(layout, ed)
+	if err != nil {
+		m.App.ErrorLog.Printf("Error parsing end date '%s': %v\n", ed, err)
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Invalid end date format",
+		}
+		out, _ := json.MarshalIndent(resp, "", "     ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
 
-	available, _ := m.DB.SearchAvailabilityByDatesByRoomID(startDate, endDate, roomID)
+	// New code to handle room_id
+	roomIDStr := r.Form.Get("room_id")
+	if roomIDStr == "" {
+		m.App.ErrorLog.Println("Room ID is missing or empty")
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Room ID is required",
+		}
+		out, _ := json.MarshalIndent(resp, "", "     ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	roomID, err := strconv.Atoi(roomIDStr)
+	if err != nil {
+		m.App.ErrorLog.Printf("Error parsing room_id '%s': %v\n", roomIDStr, err)
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Invalid room ID",
+		}
+		out, _ := json.MarshalIndent(resp, "", "     ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	m.App.InfoLog.Printf("Checking availability for room %d from %s to %s\n", roomID, startDate.Format(layout), endDate.Format(layout))
+
+	available, err := m.DB.SearchAvailabilityByDatesByRoomID(startDate, endDate, roomID)
+	if err != nil {
+		m.App.ErrorLog.Printf("Error checking availability: %v\n", err)
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Error checking availability",
+		}
+		out, _ := json.MarshalIndent(resp, "", "     ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
 	resp := jsonResponse{
 		OK:        available,
 		Message:   "Available!",
@@ -217,11 +301,11 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 		EndDate:   ed,
 		RoomID:    strconv.Itoa(roomID),
 	}
-	out, err := json.MarshalIndent(resp, "", "     ")
-	if err != nil {
-		helpers.ServerError(w, err)
-		return
-	}
+
+	out, _ := json.MarshalIndent(resp, "", "     ")
+
+	// Add this log
+	m.App.InfoLog.Printf("Sending JSON response: %s", string(out))
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
@@ -275,22 +359,51 @@ func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
 
 // take url paramaters builds session variable and take to reervation screen
 func (m *Repository) BookRoom(w http.ResponseWriter, r *http.Request) {
-	roomID, _ := strconv.Atoi(r.URL.Query().Get("id"))
-	sd := r.URL.Query().Get("s")
-	ed := r.URL.Query().Get("e")
-	layout := "2020-06-12"
-	startDate, _ := time.Parse(layout, sd)
-	endDate, _ := time.Parse(layout, ed)
-	var res models.Reservation
-	room, err := m.DB.GetRoomByID(roomID)
+	m.App.InfoLog.Printf("BookRoom called with full URL: %s", r.URL.String())
+
+	roomID, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.ErrorLog.Printf("Error parsing room_id: %v", err)
+		http.Error(w, "Invalid room ID", http.StatusBadRequest)
 		return
 	}
+
+	sd := r.URL.Query().Get("s")
+	ed := r.URL.Query().Get("e")
+
+	m.App.InfoLog.Printf("Parsed parameters: roomID=%d, startDate=%s, endDate=%s", roomID, sd, ed)
+
+	layout := "2006-01-02"
+	startDate, err := time.Parse(layout, sd)
+	if err != nil {
+		m.App.ErrorLog.Printf("Error parsing start date: %v", err)
+		http.Error(w, "Invalid start date", http.StatusBadRequest)
+		return
+	}
+
+	endDate, err := time.Parse(layout, ed)
+	if err != nil {
+		m.App.ErrorLog.Printf("Error parsing end date: %v", err)
+		http.Error(w, "Invalid end date", http.StatusBadRequest)
+		return
+	}
+
+	room, err := m.DB.GetRoomByID(roomID)
+	if err != nil {
+		m.App.ErrorLog.Printf("Error getting room by ID: %v", err)
+		http.Error(w, "Error retrieving room information", http.StatusInternalServerError)
+		return
+	}
+
+	var res models.Reservation
 	res.Room.RoomName = room.RoomName
 	res.RoomID = roomID
 	res.StartDate = startDate
 	res.EndDate = endDate
+
 	m.App.Session.Put(r.Context(), "reservation", res)
+
+	m.App.InfoLog.Printf("Redirecting to /makeReservation with reservation: %+v", res)
+
 	http.Redirect(w, r, "/makeReservation", http.StatusSeeOther)
 }
