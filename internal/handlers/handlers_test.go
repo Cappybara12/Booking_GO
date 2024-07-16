@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/akshay/bookings/internal/models"
@@ -20,30 +20,62 @@ var theTests = []struct {
 	name               string
 	url                string
 	method             string
-	params             []postData
 	expectedStatusCode int
 }{
-	// {"home", "/", "GET", []postData{}, http.StatusOK},
-	// {"about", "/about", "GET", []postData{}, http.StatusOK},
-	// {"gq", "/generals", "GET", []postData{}, http.StatusOK},
-	// {"ms", "/major", "GET", []postData{}, http.StatusOK},
-	// {"sa", "/search", "GET", []postData{}, http.StatusOK},
-	// {"contact", "/contact", "GET", []postData{}, http.StatusOK},
-	// {"mr", "/makeReservation", "GET", []postData{}, http.StatusOK},
-	// {"post-search-avail", "/search", "POST", []postData{
-	// 	{key: "start", value: "2020-01-01"},
-	// 	{key: "end", value: "2020-01-02"},
-	// }, http.StatusOK},
-	// {"post-search-avail-json", "/search", "POST", []postData{
-	// 	{key: "start", value: "2020-01-01"},
-	// 	{key: "end", value: "2020-01-02"},
-	// }, http.StatusOK},
-	// {"mrp", "/makeReservation", "POST", []postData{
-	// 	{key: "first_name", value: "John"},
-	// 	{key: "last_name", value: "Smith"},
-	// 	{key: "email", value: "me@here.com"},
-	// 	{key: "phone", value: "9212122"},
-	// }, http.StatusOK},
+	{"home", "/", "GET", http.StatusOK},
+	{"about", "/about", "GET", http.StatusOK},
+	{"gq", "/generals", "GET", http.StatusOK},
+	{"ms", "/major", "GET", http.StatusOK},
+	{"sa", "/search", "GET", http.StatusOK},
+	{"contact", "/contact", "GET", http.StatusOK},
+}
+
+func TestRepository_PostReservation(t *testing.T) {
+	tests := []struct {
+		name               string
+		reqBody            string
+		expectedStatusCode int
+	}{
+		{
+			"valid request",
+			"start_date=2050-01-01&end_date=2050-01-02&first_name=John&last_name=Smith&email=john@smith.com&phone=123456789&room_id=1",
+			http.StatusSeeOther,
+		},
+		{
+			"missing post body",
+			"",
+			http.StatusTemporaryRedirect,
+		},
+		{
+			"invalid start date",
+			"start_date=invalid&end_date=2050-01-02&first_name=John&last_name=Smith&email=john@smith.com&phone=123456789&room_id=1",
+			http.StatusTemporaryRedirect,
+		},
+		{
+			"invalid end date",
+			"start_date=2050-01-01&end_date=invalid&first_name=John&last_name=Smith&email=john@smith.com&phone=123456789&room_id=1",
+			http.StatusTemporaryRedirect,
+		},
+		{
+			"invalid room ID",
+			"start_date=2050-01-01&end_date=2050-01-02&first_name=John&last_name=Smith&email=john@smith.com&phone=123456789&room_id=invalid",
+			http.StatusTemporaryRedirect,
+		},
+	}
+
+	for _, test := range tests {
+		req, _ := http.NewRequest("POST", "/makeReservation", strings.NewReader(test.reqBody))
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+		req.Header.Set("Content-type", "application/x-www-form-urlencoded")
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(Repo.PostReservation)
+		handler.ServeHTTP(rr, req)
+
+		if rr.Code != test.expectedStatusCode {
+			t.Errorf("%s: Post Reservation handler returned wrong response code: got %v want %v", test.name, rr.Code, test.expectedStatusCode)
+		}
+	}
 }
 
 func TestHandlers(t *testing.T) {
@@ -52,36 +84,16 @@ func TestHandlers(t *testing.T) {
 	defer ts.Close()
 
 	for _, e := range theTests {
-		t.Run(e.name, func(t *testing.T) {
-			if e.method == "GET" {
-				resp, err := ts.Client().Get(ts.URL + e.url)
-				if err != nil {
-					t.Errorf("Error making GET request to %s: %v", e.url, err)
-					return
-				}
-				defer resp.Body.Close()
+		resp, err := ts.Client().Get(ts.URL + e.url)
+		if err != nil {
+			t.Errorf("Error making GET request to %s: %v", e.url, err)
+			return
+		}
+		defer resp.Body.Close()
 
-				if resp.StatusCode != e.expectedStatusCode {
-					t.Errorf("For %s, expected status %d but got %d", e.name, e.expectedStatusCode, resp.StatusCode)
-				}
-			} else if e.method == "POST" {
-				values := url.Values{}
-				for _, p := range e.params {
-					values.Add(p.key, p.value)
-				}
-
-				resp, err := ts.Client().PostForm(ts.URL+e.url, values)
-				if err != nil {
-					t.Errorf("Error making POST request to %s: %v", e.url, err)
-					return
-				}
-				defer resp.Body.Close()
-
-				if resp.StatusCode != e.expectedStatusCode {
-					t.Errorf("For %s, expected status %d but got %d", e.name, e.expectedStatusCode, resp.StatusCode)
-				}
-			}
-		})
+		if resp.StatusCode != e.expectedStatusCode {
+			t.Errorf("For %s, expected status %d but got %d", e.name, e.expectedStatusCode, resp.StatusCode)
+		}
 	}
 }
 
@@ -104,6 +116,30 @@ func TestRepository_Reservation(t *testing.T) {
 
 	if rr.Code != http.StatusOK {
 		t.Errorf("Reservation handler returned wrong response code: got %v want %v", rr.Code, http.StatusOK)
+	}
+
+	// Test case where reservation won't be in session
+	req, _ = http.NewRequest("GET", "/makeReservation", nil)
+	ctx = getCtx(req)
+	req = req.WithContext(ctx)
+	rr = httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusTemporaryRedirect {
+		t.Errorf("Reservation handler returned wrong response code for missing reservation: got %v want %v", rr.Code, http.StatusTemporaryRedirect)
+	}
+
+	// Test with non-existent room
+	reservation.RoomID = 100
+	session.Put(ctx, "reservation", reservation)
+	req, _ = http.NewRequest("GET", "/makeReservation", nil)
+	ctx = getCtx(req)
+	req = req.WithContext(ctx)
+	rr = httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusTemporaryRedirect {
+		t.Errorf("Reservation handler returned wrong response code for non-existent room: got %v want %v", rr.Code, http.StatusTemporaryRedirect)
 	}
 }
 

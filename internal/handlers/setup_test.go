@@ -13,7 +13,6 @@ import (
 	"html/template"
 
 	"github.com/akshay/bookings/internal/config"
-	"github.com/akshay/bookings/internal/driver"
 	"github.com/akshay/bookings/internal/models"
 	"github.com/akshay/bookings/internal/render"
 	"github.com/alexedwards/scs/v2"
@@ -28,7 +27,6 @@ var pathToTemplates = "./../../templates"
 var functions = template.FuncMap{}
 
 func TestMain(m *testing.M) {
-	// what am I going to put in the session
 	gob.Register(models.Reservation{})
 
 	// change this to true when in production
@@ -40,7 +38,6 @@ func TestMain(m *testing.M) {
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	app.ErrorLog = errorLog
 
-	// set up the session
 	session = scs.New()
 	session.Lifetime = 24 * time.Hour
 	session.Cookie.Persist = true
@@ -57,24 +54,18 @@ func TestMain(m *testing.M) {
 	app.TemplateCache = tc
 	app.UseCache = true
 
-	// Here you need to connect to the database
-	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=Akshay912")
-	if err != nil {
-		log.Fatal("Cannot connect to database! Dying...")
-	}
-
-	repo := NewTestRepo(&app, db)
+	repo := NewTestRepo(&app)
 	NewHandlers(repo)
-
 	render.NewRenderer(&app)
+
 	os.Exit(m.Run())
 }
-func getRoutes() http.Handler {
 
+func getRoutes() http.Handler {
 	mux := chi.NewRouter()
 
 	mux.Use(middleware.Recoverer)
-	mux.Use(NoSurf)
+	//mux.Use(NoSurf)
 	mux.Use(SessionLoad)
 
 	mux.Get("/", Repo.Home)
@@ -88,9 +79,9 @@ func getRoutes() http.Handler {
 
 	mux.Get("/contact", Repo.Contact)
 
-	mux.Get("/makeReservation", Repo.Reservation)
-	mux.Post("/makeReservation", Repo.PostReservation)
-	mux.Get("/reservationSummary", Repo.ReservationSummary)
+	mux.Get("/make-reservation", Repo.Reservation)
+	mux.Post("/make-reservation", Repo.PostReservation)
+	mux.Get("/reservation-summary", Repo.ReservationSummary)
 
 	fileServer := http.FileServer(http.Dir("./static/"))
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer))
@@ -98,7 +89,7 @@ func getRoutes() http.Handler {
 	return mux
 }
 
-// NoSurf is the csrf protection middleware
+// NoSurf adds CSRF protection to all POST requests
 func NoSurf(next http.Handler) http.Handler {
 	csrfHandler := nosurf.New(next)
 
@@ -111,13 +102,14 @@ func NoSurf(next http.Handler) http.Handler {
 	return csrfHandler
 }
 
-// SessionLoad loads and saves session data for current request
+// SessionLoad loads and saves the session on every request
 func SessionLoad(next http.Handler) http.Handler {
 	return session.LoadAndSave(next)
 }
 
 // CreateTestTemplateCache creates a template cache as a map
 func CreateTestTemplateCache() (map[string]*template.Template, error) {
+
 	myCache := map[string]*template.Template{}
 
 	pages, err := filepath.Glob(fmt.Sprintf("%s/*.page.tmpl", pathToTemplates))
