@@ -204,7 +204,7 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 
 	sd := r.Form.Get("start")
 	ed := r.Form.Get("end")
-	layout := "2020-06-12"
+	layout := "2006-01-02"
 	startDate, _ := time.Parse(layout, sd)
 	endDate, _ := time.Parse(layout, ed)
 	roomID, _ := strconv.Atoi(r.Form.Get("room_id"))
@@ -255,7 +255,8 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 		StringMap: stringMap,
 	})
 }
-//displays list of toehr rooms 
+
+// displays list of toehr rooms
 func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
 	roomID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
