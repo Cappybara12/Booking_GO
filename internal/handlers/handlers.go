@@ -37,7 +37,7 @@ func NewRepo(a *config.AppConfig, db *driver.DB) *Repository {
 func NewTestRepo(a *config.AppConfig) *Repository {
 	return &Repository{
 		App: a,
-		DB:  dbrepo.NewTestingRepo(a),
+		DB:  dbrepo.NewTestingsRepo(a),
 	}
 }
 
