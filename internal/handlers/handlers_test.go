@@ -637,7 +637,42 @@ func TestRepository_AvailabilityJSON(t *testing.T) {
 		t.Error("Got availability when simulating database error")
 	}
 }
+func TestRepository_AvailabilityJSON_DatabaseError(t *testing.T) {
+    reqBody := "start=2060-01-01"
+    reqBody = fmt.Sprintf("%s&%s", reqBody, "end=2060-01-02")
+    reqBody = fmt.Sprintf("%s&%s", reqBody, "room_id=1")
+    req, _ := http.NewRequest("POST", "/search-availability-json", strings.NewReader(reqBody))
+    ctx := getCtx(req)
+    req = req.WithContext(ctx)
+    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+    rr := httptest.NewRecorder()
+    handler := http.HandlerFunc(Repo.AvailabilityJSON)
+    handler.ServeHTTP(rr, req)
 
+    var j jsonResponse
+    err := json.Unmarshal([]byte(rr.Body.String()), &j)
+    if err != nil {
+        t.Error("Failed to parse JSON response")
+    }
+    if j.OK || j.Message != "Error querying database" {
+        t.Errorf("AvailabilityJSON handler returned unexpected response for database error: got %v, %s", j.OK, j.Message)
+    }
+}
+func TestRepository_PostAvailability_DatabaseError(t *testing.T) {
+    reqBody := "start=2060-01-01"
+    reqBody = fmt.Sprintf("%s&%s", reqBody, "end=2060-01-02")
+    req, _ := http.NewRequest("POST", "/search-availability", strings.NewReader(reqBody))
+    ctx := getCtx(req)
+    req = req.WithContext(ctx)
+    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+    rr := httptest.NewRecorder()
+    handler := http.HandlerFunc(Repo.PostAvailability)
+    handler.ServeHTTP(rr, req)
+
+    if rr.Code != http.StatusTemporaryRedirect {
+        t.Errorf("PostAvailability handler returned wrong response code for database error: got %d, wanted %d", rr.Code, http.StatusTemporaryRedirect)
+    }
+}
 func TestRepository_ReservationSummary(t *testing.T) {
 	/*****************************************
 	// first case -- reservation in session
