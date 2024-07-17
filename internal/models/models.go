@@ -1,7 +1,8 @@
 package models
 
-import "time"
-
+import (
+	"time"
+)
 
 type User struct {
 	ID          int
@@ -14,7 +15,7 @@ type User struct {
 	UpdatedAt   time.Time
 }
 
-//it is the room model
+// it is the room model
 type Room struct {
 	ID        int
 	RoomName  string
@@ -22,7 +23,7 @@ type Room struct {
 	UpdatedAt time.Time
 }
 
-//it iso the restrcitons model for our restrcitions table
+// it iso the restrcitons model for our restrcitions table
 type Restriction struct {
 	ID              int
 	RestrictionName string
@@ -45,7 +46,7 @@ type Reservation struct {
 	Room Room
 }
 
-//is the room restrciton model
+// is the room restrciton model
 type RoomRestriction struct {
 	ID            int
 	StartDate     time.Time
@@ -59,4 +60,13 @@ type RoomRestriction struct {
 	Room        Room
 	Reservation Reservation
 	Restriction Restriction
+}
+
+// holds the mail message
+type MailData struct {
+	To       string
+	From     string
+	Subject  string
+	Content  string
+	Template string
 }

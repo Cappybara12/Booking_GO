@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -87,7 +88,7 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 	data := make(map[string]interface{})
 	data["reservation"] = res
 
-	render.Template(w, r, "make-reservation.page.tmpl", &models.TemplateData{
+	render.Template(w, r, "makeReservation.page.tmpl", &models.TemplateData{
 		Form:      forms.New(nil),
 		Data:      data,
 		StringMap: stringMap,
@@ -151,7 +152,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		data := make(map[string]interface{})
 		data["reservation"] = reservation
 		http.Error(w, "my own error message", http.StatusSeeOther)
-		render.Template(w, r, "make-reservation.page.tmpl", &models.TemplateData{
+		render.Template(w, r, "makeReservation.page.tmpl", &models.TemplateData{
 			Form: form,
 			Data: data,
 		})
@@ -179,10 +180,41 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
+	//send notifications to guest
+	htmlMessage := fmt.Sprintf(`
+	<strong>Reservation Confirmation</strong><br>
+	Dear %s:, <br>
+	This is to confirm your reservation from %s to %s.
+	
+	`, reservation.FirstName, reservation.StartDate.Format("2006-01-02"), reservation.EndDate.Format("2006-01-02"))
+	msg := models.MailData{
+		To:       reservation.Email,
+		From:     "me@here.com",
+		Subject:  "Reservation Confirmation",
+		Content:  htmlMessage,
+		Template: "basic.html",
+	}
+	m.App.MailChan <- msg
 
+	//send notifications to property owner
+	htmlMessage = fmt.Sprintf(`
+	<strong>Reservation Confirmation</strong><br>
+	Dear %s:, <br>
+	This is confirm your reservation from %s to %s.
+	
+	`, reservation.Room.RoomName, reservation.StartDate.Format("2006-01-02"), reservation.EndDate.Format("2006-01-02"))
+	msg = models.MailData{
+		To:       "me@here.com",
+		From:     "me@here.com",
+		Subject:  "Reservation Notification",
+		Content:  htmlMessage,
+		Template: "basic.html",
+	}
+
+	m.App.MailChan <- msg
 	m.App.Session.Put(r.Context(), "reservation", reservation)
 
-	http.Redirect(w, r, "/reservation-summary", http.StatusSeeOther)
+	http.Redirect(w, r, "/reservationSummary", http.StatusSeeOther)
 
 }
 
@@ -193,12 +225,12 @@ func (m *Repository) Generals(w http.ResponseWriter, r *http.Request) {
 
 // Majors renders the room page
 func (m *Repository) Majors(w http.ResponseWriter, r *http.Request) {
-	render.Template(w, r, "majors.page.tmpl", &models.TemplateData{})
+	render.Template(w, r, "major.page.tmpl", &models.TemplateData{})
 }
 
 // Availability renders the search availability page
 func (m *Repository) Availability(w http.ResponseWriter, r *http.Request) {
-	render.Template(w, r, "search-availability.page.tmpl", &models.TemplateData{})
+	render.Template(w, r, "search.page.tmpl", &models.TemplateData{})
 }
 
 // PostAvailability renders the search availability page
@@ -237,7 +269,7 @@ func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 	if len(rooms) == 0 {
 		// no availability
 		m.App.Session.Put(r.Context(), "error", "No availability")
-		http.Redirect(w, r, "/search-availability", http.StatusSeeOther)
+		http.Redirect(w, r, "/search", http.StatusSeeOther)
 		return
 	}
 
@@ -345,7 +377,7 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 	stringMap["start_date"] = sd
 	stringMap["end_date"] = ed
 
-	render.Template(w, r, "reservation-summary.page.tmpl", &models.TemplateData{
+	render.Template(w, r, "reservationSummary.page.tmpl", &models.TemplateData{
 		Data:      data,
 		StringMap: stringMap,
 	})
@@ -383,7 +415,7 @@ func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
 
 	m.App.Session.Put(r.Context(), "reservation", res)
 
-	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
+	http.Redirect(w, r, "/makeReservation", http.StatusSeeOther)
 
 }
 
@@ -413,5 +445,5 @@ func (m *Repository) BookRoom(w http.ResponseWriter, r *http.Request) {
 
 	m.App.Session.Put(r.Context(), "reservation", res)
 
-	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
+	http.Redirect(w, r, "/makeReservation", http.StatusSeeOther)
 }

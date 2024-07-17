@@ -28,9 +28,9 @@ var theTests = []struct {
 }{
 	{"home", "/", "GET", http.StatusOK},
 	{"about", "/about", "GET", http.StatusOK},
-	{"gq", "/generals-quarters", "GET", http.StatusOK},
-	{"ms", "/majors-suite", "GET", http.StatusOK},
-	{"sa", "/search-availability", "GET", http.StatusOK},
+	{"gq", "/generals", "GET", http.StatusOK},
+	{"ms", "/major", "GET", http.StatusOK},
+	{"sa", "/search", "GET", http.StatusOK},
 	{"contact", "/contact", "GET", http.StatusOK},
 
 	//{"post-search-avail", "/search-availability", "POST", []postData{
@@ -70,7 +70,7 @@ func TestRepository_Reservation(t *testing.T) {
 		},
 	}
 
-	req, _ := http.NewRequest("GET", "/make-reservation", nil)
+	req, _ := http.NewRequest("GET", "/makeReservation", nil)
 	ctx := getCtx(req)
 	req = req.WithContext(ctx)
 
@@ -86,7 +86,7 @@ func TestRepository_Reservation(t *testing.T) {
 	}
 
 	// test case where reeservation is not in session (reset everything)
-	req, _ = http.NewRequest("GET", "/make-reservation", nil)
+	req, _ = http.NewRequest("GET", "/makeReservation", nil)
 	ctx = getCtx(req)
 	req = req.WithContext(ctx)
 	rr = httptest.NewRecorder()
@@ -97,7 +97,7 @@ func TestRepository_Reservation(t *testing.T) {
 	}
 
 	// test with non-existent room
-	req, _ = http.NewRequest("GET", "/make-reservation", nil)
+	req, _ = http.NewRequest("GET", "/makeReservation", nil)
 	ctx = getCtx(req)
 	req = req.WithContext(ctx)
 	rr = httptest.NewRecorder()
@@ -120,7 +120,7 @@ func TestRepository_PostReservation(t *testing.T) {
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "phone=123456789")
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "room_id=1")
 
-	req, _ := http.NewRequest("POST", "/make-reservation", strings.NewReader(reqBody))
+	req, _ := http.NewRequest("POST", "/makeReservation", strings.NewReader(reqBody))
 	ctx := getCtx(req)
 	req = req.WithContext(ctx)
 
@@ -137,7 +137,7 @@ func TestRepository_PostReservation(t *testing.T) {
 	}
 
 	// test for missing post body
-	req, _ = http.NewRequest("POST", "/make-reservation", nil)
+	req, _ = http.NewRequest("POST", "/makeReservation", nil)
 	ctx = getCtx(req)
 	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -160,7 +160,7 @@ func TestRepository_PostReservation(t *testing.T) {
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "phone=123456789")
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "room_id=1")
 
-	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(reqBody))
+	req, _ = http.NewRequest("POST", "/makeReservation", strings.NewReader(reqBody))
 	ctx = getCtx(req)
 	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -183,7 +183,7 @@ func TestRepository_PostReservation(t *testing.T) {
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "phone=123456789")
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "room_id=1")
 
-	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(reqBody))
+	req, _ = http.NewRequest("POST", "/makeReservation", strings.NewReader(reqBody))
 	ctx = getCtx(req)
 	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -206,7 +206,7 @@ func TestRepository_PostReservation(t *testing.T) {
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "phone=123456789")
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "room_id=invalid")
 
-	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(reqBody))
+	req, _ = http.NewRequest("POST", "/makeReservation", strings.NewReader(reqBody))
 	ctx = getCtx(req)
 	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -229,7 +229,7 @@ func TestRepository_PostReservation(t *testing.T) {
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "phone=123456789")
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "room_id=1")
 
-	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(reqBody))
+	req, _ = http.NewRequest("POST", "/makeReservation", strings.NewReader(reqBody))
 	ctx = getCtx(req)
 	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -252,7 +252,7 @@ func TestRepository_PostReservation(t *testing.T) {
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "phone=123456789")
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "room_id=2")
 
-	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(reqBody))
+	req, _ = http.NewRequest("POST", "/makeReservation", strings.NewReader(reqBody))
 	ctx = getCtx(req)
 	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -275,7 +275,7 @@ func TestRepository_PostReservation(t *testing.T) {
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "phone=123456789")
 	reqBody = fmt.Sprintf("%s&%s", reqBody, "room_id=1000")
 
-	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(reqBody))
+	req, _ = http.NewRequest("POST", "/makeReservation", strings.NewReader(reqBody))
 	ctx = getCtx(req)
 	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -638,40 +638,40 @@ func TestRepository_AvailabilityJSON(t *testing.T) {
 	}
 }
 func TestRepository_AvailabilityJSON_DatabaseError(t *testing.T) {
-    reqBody := "start=2060-01-01"
-    reqBody = fmt.Sprintf("%s&%s", reqBody, "end=2060-01-02")
-    reqBody = fmt.Sprintf("%s&%s", reqBody, "room_id=1")
-    req, _ := http.NewRequest("POST", "/search-availability-json", strings.NewReader(reqBody))
-    ctx := getCtx(req)
-    req = req.WithContext(ctx)
-    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-    rr := httptest.NewRecorder()
-    handler := http.HandlerFunc(Repo.AvailabilityJSON)
-    handler.ServeHTTP(rr, req)
+	reqBody := "start=2060-01-01"
+	reqBody = fmt.Sprintf("%s&%s", reqBody, "end=2060-01-02")
+	reqBody = fmt.Sprintf("%s&%s", reqBody, "room_id=1")
+	req, _ := http.NewRequest("POST", "/search-availability-json", strings.NewReader(reqBody))
+	ctx := getCtx(req)
+	req = req.WithContext(ctx)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(Repo.AvailabilityJSON)
+	handler.ServeHTTP(rr, req)
 
-    var j jsonResponse
-    err := json.Unmarshal([]byte(rr.Body.String()), &j)
-    if err != nil {
-        t.Error("Failed to parse JSON response")
-    }
-    if j.OK || j.Message != "Error querying database" {
-        t.Errorf("AvailabilityJSON handler returned unexpected response for database error: got %v, %s", j.OK, j.Message)
-    }
+	var j jsonResponse
+	err := json.Unmarshal([]byte(rr.Body.String()), &j)
+	if err != nil {
+		t.Error("Failed to parse JSON response")
+	}
+	if j.OK || j.Message != "Error querying database" {
+		t.Errorf("AvailabilityJSON handler returned unexpected response for database error: got %v, %s", j.OK, j.Message)
+	}
 }
 func TestRepository_PostAvailability_DatabaseError(t *testing.T) {
-    reqBody := "start=2060-01-01"
-    reqBody = fmt.Sprintf("%s&%s", reqBody, "end=2060-01-02")
-    req, _ := http.NewRequest("POST", "/search-availability", strings.NewReader(reqBody))
-    ctx := getCtx(req)
-    req = req.WithContext(ctx)
-    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-    rr := httptest.NewRecorder()
-    handler := http.HandlerFunc(Repo.PostAvailability)
-    handler.ServeHTTP(rr, req)
+	reqBody := "start=2060-01-01"
+	reqBody = fmt.Sprintf("%s&%s", reqBody, "end=2060-01-02")
+	req, _ := http.NewRequest("POST", "/search-availability", strings.NewReader(reqBody))
+	ctx := getCtx(req)
+	req = req.WithContext(ctx)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(Repo.PostAvailability)
+	handler.ServeHTTP(rr, req)
 
-    if rr.Code != http.StatusTemporaryRedirect {
-        t.Errorf("PostAvailability handler returned wrong response code for database error: got %d, wanted %d", rr.Code, http.StatusTemporaryRedirect)
-    }
+	if rr.Code != http.StatusTemporaryRedirect {
+		t.Errorf("PostAvailability handler returned wrong response code for database error: got %d, wanted %d", rr.Code, http.StatusTemporaryRedirect)
+	}
 }
 func TestRepository_ReservationSummary(t *testing.T) {
 	/*****************************************
@@ -685,7 +685,7 @@ func TestRepository_ReservationSummary(t *testing.T) {
 		},
 	}
 
-	req, _ := http.NewRequest("GET", "/reservation-summary", nil)
+	req, _ := http.NewRequest("GET", "/reservationSummary", nil)
 	ctx := getCtx(req)
 	req = req.WithContext(ctx)
 
@@ -703,7 +703,7 @@ func TestRepository_ReservationSummary(t *testing.T) {
 	/*****************************************
 	// second case -- reservation not in session
 	*****************************************/
-	req, _ = http.NewRequest("GET", "/reservation-summary", nil)
+	req, _ = http.NewRequest("GET", "/reservationSummary", nil)
 	ctx = getCtx(req)
 	req = req.WithContext(ctx)
 
