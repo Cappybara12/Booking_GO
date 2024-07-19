@@ -11,39 +11,46 @@
 <body>
     <!-- Navbar from index.html -->
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
-        <div class="container-fluid">
-          <a class="navbar-brand" href="#">Navbar</a>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="navbarNavDropdown">
-            <ul class="navbar-nav">
-              <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="/">Home</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/search">Book Now</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/makeReservation">Make Reservation</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/contact">Contact</a>
-              </li>
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  Rooms
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a class="dropdown-item" href="/generals">General</a></li>
-                  <li><a class="dropdown-item" href="/major">Major suite</a></li>
-                  <li><a class="dropdown-item" href="#">Something else here</a></li>
-                </ul>
-              </li>
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Navbar</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNavDropdown">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="/">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/search">Book Now</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/makeReservation">Make Reservation</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/contact">Contact</a>
+          </li>
+          <li class="nav-item">
+            {{if .IsAuthenticated}}
+            <a class="nav-link" href="/user/logout" tabindex="-1">Logout</a>
+            {{else}}
+            <a class="nav-link" href="/user/login" tabindex="-1">Login</a>
+            {{end}}
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Rooms
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/generals">General</a></li>
+              <li><a class="dropdown-item" href="/major">Major suite</a></li>
+              <li><a class="dropdown-item" href="#">Something else here</a></li>
             </ul>
-          </div>
-        </div>
-      </nav>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
 
     {{block "content" .}}
 

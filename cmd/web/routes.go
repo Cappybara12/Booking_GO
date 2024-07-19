@@ -33,7 +33,13 @@ func routes(app *config.AppConfig) http.Handler {
 	mux.Get("/makeReservation", handlers.Repo.Reservation)
 	mux.Post("/makeReservation", handlers.Repo.PostReservation)
 	mux.Get("/reservationSummary", handlers.Repo.ReservationSummary)
-
+	mux.Post("/user/login",handlers.Repo.PostShowLogin)
+	mux.Get("/user/login",handlers.Repo.ShowLogin)
+	mux.Get("/user/logout",handlers.Repo.Logout)
+	mux.Route("/admin",func(mux chi.Router){
+		mux.Use(Auth)
+		mux.Get("/dashboard",handlers.Repo.AdminDashboard)
+	})
 	mux.Get("/major", handlers.Repo.Majors)
 	mux.Get("/about", handlers.Repo.About)
 	fileServer := http.FileServer(http.Dir("./static/"))
